@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style type="text/css">
+			*{
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+			body{
+				overflow: hidden;
+				background: #ccc;
+			}
+			.balloon{
+				/*相对定位父级 是 window*/
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 160px;
+				height: 160px;
+				background-color: #faf9f9;
+				/*css3圆角 左上 右上 右下 左下*/
+				border-radius: 160px 160px 64px 160px;
+				/*css3变形 旋转顺时针 45度*/
+				transform: rotate(45deg);
+				/*css3盒子阴影    x位移 y位移 羽化程度  半径  颜色  inset内部阴影*/
+				box-shadow: -8px -8px 80px  -9px #873940 inset;
+			}
+			.balloon:after{
+				content: "";
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				border:8px solid transparent;
+				border-right-color: #873940;
+				display: block;
+				transform: rotate(45deg);
+			}
+			
+			
+		</style>
+	</head>      
+	<body>
+		<!--<div class="balloon"></div>-->
+	</body>
+	<script>
+			/*javascript*/
+			/*
+			 * 需求分析 
+			 *    1.javascript动态生成DOM元素
+			 * 			1.生成几个num
+			 * 			2.动态dom生成
+			 * 				1.创建标签createElement
+			 * 				2.初始化样式类名
+			 * 				3.循环创建
+			 * 				4.追加给body
+			 * 				5.初始化top
+			 * 			    6.初始化left
+			 * 					1.伪随机数 Math.random() 包括0 不包括1
+			 * 			3.节点片断createDocumentFragment
+			 * 	  2.气球向上运动，随机运动速度
+			 * 			1.获取气球	
+			 * 			2.for循环	
+			 * 			3.每一个气球top = 自身的top	
+			 * 				
+			 * 	  3. 定时器循环
+			 * 			setInterval
+			 * 	  3.点击气球,气球消失
+			 * 			1.点击气球
+			 * 				1.事件委托
+			 *    4.完善气球爆炸动画
+			 *        1.this
+			 * 编程思维
+			 * 
+			 * for  没有块级作用域
+			 * 
+			 * */
+			
+			//var num = 10;  ///存储初始化个数
+			var wH = window.innerHeight;   //获取浏览器高度
+			var wW = window.innerWidth;    //获取浏览器宽度
+			var bZ = 160;       ///设置一个元素高度
+			var timer;         //初始化定时器
+			var aBalloon = [];  //空数组存储
+			init(10)  //执行初始位置函数
+			
+			//////气球移动函数
+			setInterval(move,60)
+			document.addEventListener("click",function(ev){
+				var ele=ev.target;
+				if(ele.className.toLowerCase() === "balloon"){
+					///删除一个
+					//ele.parentNode.removeChild(ele)
+					//删除同时再创建一个
+					//init(1)
+					//删除aBalloon数组中的数据
+					//aBalloon.splice(aBalloon.lastIndexOf(ele),1)
+					//console.log(aBalloon)
+					////用ele调用boom   替换this指向     bind(ele)绑定元素
+					boom.call(ele,function(){
+						this.parentNode.removeChild(this)
+						init(1)
+						aBalloon.splice(aBalloon.lastIndexOf(this),1);
+					}.bind(ele));
+				}
+			},false)
+			//气球爆炸动画     cb是上面的回调函数
+			function boom(cb){
+				var routeArr = [10,80];  //旋转数组
+				var index=0;
+				//var that=this;
+				////setinterval 里面的this指向window   通过bind(this)绑定 里面的this指向元素
+				this.timer = setInterval(function(){
+					///判断元素自身宽度减少,少于10
+					if(this.offsetWidth<10){
+						//清楚计时器
+						clearInterval(this.timer)
+						//执行运动回调函数,不能写死,定义成回调函数
+						cb&&cb()  //如果参数存在 执行
+						////执行完结束
+						return false;
+					}
+					
+					this.speed++;
+					index++;
+					index%=2;
+					this.style.width = this.offsetWidth - 10 + "px";
+					this.style.height = this.offsetHeight - 10 + "px";
+					this.style.transform = "rotate("+routeArr[index]+"deg)"
+				}.bind(this),1000/50)
+				console.log(this)
+			}
+			
+			
+			
+			function move(){
+				/******************下标指引**********************/
+				for (var i=0,item;item = aBalloon[i++];) {
+					//走         减去一个随机数   使小球运动运动步数不一样        获取自定义属性  
+					item.style.top = item.offsetTop - item.speed  + "px"
+					//判断是否达到最上面
+					if(item.offsetTop < -160){
+						item.style.top = wH  + "px"
+					}
+				}
+			}
+			//////初始化
+			function  init(num){   ///方法
+				  //创建文档片段                               最小DOM单元
+				var fragment = document.createDocumentFragment();
+				  ///循环创建
+				for (var i=0;i<num;i++) {
+					 //随机数         ------------取整  ~~  >>0位移小数位    |  ----------
+					var randomX = ((Math.random() * wW) | 0)-bZ;
+					    randomX = Math.abs(randomX)     //绝对值
+					//console.log(randomX)
+					  //创建
+					var oBalloon = document.createElement("div")
+					  //添加类名
+				    oBalloon.className = "balloon"
+				      ///初始化top
+				    oBalloon.style.top = wH -160 + "px";
+				      ///初始化left
+				    oBalloon.style.left = randomX + "px";
+				     ////自定义属性    为了小球运动
+				    oBalloon.speed = ~~(Math.random()*8)+1;
+				    //////添加
+				    aBalloon.push(oBalloon)
+				        /////添加给片断
+				    fragment.appendChild(oBalloon)
+				}
+				//追加给body
+			    document.body.appendChild(fragment)
+			}
+			  
+			
+			
+			
+		</script>
+</html>
